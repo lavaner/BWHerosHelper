@@ -96,6 +96,7 @@ sub buildScoreTable
 	x  => 9,
 	y  => 7,
 	z  => 10, # FIXME
+	'*'  => 0,
 	);
 }
 ############################################################################
@@ -139,10 +140,11 @@ sub match
 
     foreach my $ele (@letters)
     {
+	my $currentScore = $scoreTable{$ele};
 	$ele =~ s/\*/\\w/;
 	if ($buffer =~ s/$ele//)
 	{
-	    $score += $scoreTable{$ele};
+	    $score += $currentScore;
 	}
 	#print "current buffer is: $buffer";
 	#print "Score is: $score\n";
