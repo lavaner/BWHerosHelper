@@ -14,50 +14,27 @@ while(my $word = <>)
 	print "$score $selected";
     }
 }
-
-###########################################################################
-sub replaceDoubleScoreTile
-{
-    my ($list, $alternative) = @_;
-    # print "$alternative\n";
-    $list =~ s/\?/$alternative/;
-    $list;
-}
-###########################################################################
-sub buildOptionalElementsTable
-{
-    my @optional = qw(a b c d e f g h i j k l m n o p q r s t u v w x y z);
-}
-###########################################################################
-sub hasDoubleScore
-{
-    my ($input) = @_;
-    if ($input =~ /\?/)
-    {
-	return 1;
-    }
-    else
-    {
-	return undef;
-    }
-}
 ###########################################################################
 sub score
-{
-    my($word, %scoreTable) = @_;
-    my $score = 0;
-    my @str = &list2array($word, '');
-    foreach my $ele (@str)
+{    
+    my (@elements) = @_;
+    my %scoreTable = &buildScoreTable;
+
+    my $totalScore = 0;
+    foreach my $element (@elements)
     {
-	if (exists $scoreTable{$ele})
+	my $score = $scoreTable{$element->{'letter'}};
+#	print "$score\n";
+	    
+	if ($element->{'bonus'})
 	{
-	    $score += $scoreTable{$ele};
-	}else
-	{
-	    last;
-	}	
+	    $score *= 2;
+	}
+	
+	$totalScore += $score;
+#	print "$totalScore\n";
     }
-    $score;
+    $totalScore;
 }
 ###########################################################################
 sub list2array
@@ -100,60 +77,64 @@ sub buildScoreTable
 	);
 }
 ############################################################################
-sub buildElementString
-{
-    my (%table) = @_;
-    my @name = keys %table;
-    my $elements = join "",@name;
-}
-############################################################################
-sub buildPatternString
-{
-    my (%table) = @_;
-    my $pattern = '';
-    while( my ($key, $value) = each %table)
-    {
-	my $number = $value + 1;
-	$pattern = $pattern."|($key(.*)){$number}";
-    }
-    $pattern = substr($pattern, 1);
-}
-############################################################################
-sub buildElementTable
-{
-    my (@str) = @_;
-    my %table;
-    foreach my $item (@str)
-    {
-	$table{$item}++;
-    }    
-    %table;
-}
-############################################################################
 sub match
 {
     my ($word, @letters) = @_;
     
     my $buffer = $word;
-    my $score = 0;
-    my %scoreTable = &buildScoreTable;
+    my @elements;
 
     foreach my $ele (@letters)
     {
-	my $currentScore = $scoreTable{$ele};
-	$ele =~ s/\*/\\w/;
-	if ($buffer =~ s/$ele//)
+	#print "Current Elements are: $ele\n";
+	$ele =~ m/(\w+)([!|$|@|#]*)/;	
+	
+	my $letter = $1;
+	my $element = {
+	    letter => $1,
+	    bonus => $2,
+	    };
+	#print "Current Letter is: $letter\n";
+	#print "Current Bonus is: $bonus\n";
+	
+	$letter =~ s/\*/\\w/;
+	if ($buffer =~ s/$letter//)
 	{
-	    $score += $currentScore;
+	    push @elements, $element;
 	}
-	#print "current buffer is: $buffer";
+	#print "Current Buffer is: $buffer";
 	#print "Score is: $score\n";
 	if($buffer =~ m/^\n$/)
 	{
-	    #print ($score, $word);
+	    my $score = &score(@elements);
 	    return ($word, $score);
 	}
     }
     return undef;    
+}
+############################################################################
+sub render
+{
+    my ($letter, $bonus) = @_;
+    
+    my %bounusTable = &buildRenderTable;
+    if ($bonus)
+    {
+	my $color = $bounusTable{$letter};
+	$letter =~ s/$letter/\033[;$color m$letter\033[0m/;
+    }
+    $letter;
+    
+}
+############################################################################
+sub buildRenderTable
+{
+    my @table = {
+	'!' => '33', # Topaz tiles, Brown
+	'@' => '31', # Ruby Tiles, Red
+	'#' => '32', # Enerald Tiles, Green
+	'$' => '34', # Sapphine Lucky Word, Blue
+	'*' => '37', # Double Score, Light Gray
+    };
 }
 ############################################################################
