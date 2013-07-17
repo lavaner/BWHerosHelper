@@ -6,9 +6,12 @@ chomp $input;
 my @str = &list2array($input, ',');
 #print "element array is: @str\n";
 
+my @list = &buildElementList(@str);
+#print "The List is: @list\n";
+
 while(my $word = <>)
 {
-    my ($selected, $score) = &match($word, @str);
+    my ($selected, $score) = &match($word, @list);
     if ($selected)
     {
 	print "$score $selected";
@@ -35,6 +38,24 @@ sub score
 #	print "$totalScore\n";
     }
     $totalScore;
+}
+###########################################################################
+sub buildElementList
+{
+    my @letters = @_;
+    my @list;
+
+    foreach my $ele (@letters)
+    {
+	$ele =~ m/(\w+)([!|$|@|#]*)/;	
+	
+	my $element = {
+	    letter => $1,
+	    bonus => $2,
+	};
+	push @list, $element;
+    }
+    @list;
 }
 ###########################################################################
 sub list2array
@@ -79,28 +100,23 @@ sub buildScoreTable
 ############################################################################
 sub match
 {
-    my ($word, @letters) = @_;
+    my ($word, @list) = @_;
     
     my $buffer = $word;
     my @elements;
 
-    foreach my $ele (@letters)
+    #print "The List is: @list\n";
+
+    foreach my $ele (@list)
     {
-	#print "Current Elements are: $ele\n";
-	$ele =~ m/(\w+)([!|$|@|#]*)/;	
-	
-	my $letter = $1;
-	my $element = {
-	    letter => $1,
-	    bonus => $2,
-	    };
+	my $letter = $ele->{'letter'};
 	#print "Current Letter is: $letter\n";
 	#print "Current Bonus is: $bonus\n";
 	
 	$letter =~ s/\*/\\w/;
 	if ($buffer =~ s/$letter//)
 	{
-	    push @elements, $element;
+	    push @elements, $ele;
 	}
 	#print "Current Buffer is: $buffer";
 	#print "Score is: $score\n";
