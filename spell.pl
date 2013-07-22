@@ -11,10 +11,13 @@ my @list = &buildElementList(@str);
 
 while(my $word = <>)
 {
-    my ($selected, $score) = &match($word, @list);
-    if ($selected)
+    my @letters = $word =~ m/(qu|\w)/g;
+    my @selected = &match(\@list, \@letters);
+    
+    if (@selected)
     {
-	print "$score $selected";
+	my $score = &score(@selected);
+	print "$score $word";
     }
 }
 ###########################################################################
@@ -26,6 +29,7 @@ sub score
     my $totalScore = 0;
     foreach my $element (@elements)
     {
+#	print "Current element is: $element\n";
 	my $score = $scoreTable{$element->{'letter'}};
 #	print "$score\n";
 	    
@@ -100,33 +104,45 @@ sub buildScoreTable
 ############################################################################
 sub match
 {
-    my ($word, @list) = @_;
+    my ($listRef, $lettersRef) = @_;
+    my @list = @$listRef;
+    my @letters = @$lettersRef;
+    my @elements = ();
     
-    my $buffer = $word;
-    my @elements;
-
+    #print "Current Word is: $buffer\n";
     #print "The List is: @list\n";
 
-    foreach my $ele (@list)
+    foreach my $letterElement (@letters)
     {
-	my $letter = $ele->{'letter'};
-	#print "Current Letter is: $letter\n";
-	#print "Current Bonus is: $bonus\n";
-	
-	$letter =~ s/\*/\\w/;
-	if ($buffer =~ s/$letter//)
+	#print "Current Letter to be match is: $letterElement\n";
+	#print "Alternative Letter is: ($#list+1)\n";
+	my $earlyStop = 1;
+	if (!($#list + 1))
 	{
-	    push @elements, $ele;
+	    return ();
 	}
-	#print "Current Buffer is: $buffer";
-	#print "Score is: $score\n";
-	if($buffer =~ m/^\n$/)
+	foreach my $i (0..$#list)
 	{
-	    my $score = &score(@elements);
-	    return ($word, $score);
+	    my $letter = $list[$i]->{'letter'};
+	    #print "Current Letter is: $letter\n";
+	    #print "Current Bonus is: $bonus\n";
+	    
+	    $letter =~ s/\*/\\w/;
+	    if ($letterElement =~ s/$letter//)
+	    {
+		push @elements, $list[$i];
+		splice(@list, $i, 1);
+		$earlyStop = 0;
+		last;
+	    }
+	    #print "Current Buffer is: $buffer\n";  
+	}
+	if ($earlyStop)
+	{
+	    return ();
 	}
     }
-    return undef;    
+    @elements;
 }
 ############################################################################
 sub render
