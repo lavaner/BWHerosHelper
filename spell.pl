@@ -17,7 +17,8 @@ while(my $word = <>)
     if (@selected)
     {
 	my $score = &score(@selected);
-	print "$score $word";
+	my $rendered = &render(@selected);
+	print "$score $rendered\n";
     }
 }
 ###########################################################################
@@ -27,19 +28,37 @@ sub score
     my %scoreTable = &buildScoreTable;
 
     my $totalScore = 0;
+    my $letterScore = 0;
+    my $bonusScore = 0;
+    my %bonusTable;
     foreach my $element (@elements)
     {
 #	print "Current element is: $element\n";
-	my $score = $scoreTable{$element->{'letter'}};
+	my $currentLetter = $element->{'letter'};
+	my $elementScore;
+	if ($currentLetter =~ m/(\*)/)
+	{
+	    $elementScore = 0;
+	}
+	else
+	{
+	    $elementScore = $scoreTable{$element->{'letter'}};
+	}
 #	print "$score\n";
 	    
 	if ($element->{'bonus'})
 	{
-	    $score *= 2;
+	    $bonusTable{$element->{'bonus'}}++;
+	    $elementScore *= 2;
 	}
 	
-	$totalScore += $score;
+	$totalScore += $elementScore;
 #	print "$totalScore\n";
+    }
+
+    if ($elements[$#elements]->{'letter'} =~ m/(\*)/)
+    {
+	$totalScore *= 2;
     }
     $totalScore;
 }
@@ -51,7 +70,7 @@ sub buildElementList
 
     foreach my $ele (@letters)
     {
-	$ele =~ m/(\w+)([!|$|@|#]*)/;	
+	$ele =~ m/(\w+|\*)([!|$|@|#]*)/;	
 	
 	my $element = {
 	    letter => $1,
@@ -88,7 +107,7 @@ sub buildScoreTable
 	n  => 4,
 	o  => 3,
 	p  => 5,
-	qu => 10, # FIXME
+	qu => 10,
 	r  => 3,
 	s  => 3,
 	t  => 3,
@@ -97,7 +116,7 @@ sub buildScoreTable
 	w  => 7,
 	x  => 9,
 	y  => 7,
-	z  => 10, # FIXME
+	z  => 10,
 	'*'  => 0,
 	);
 }
@@ -121,14 +140,22 @@ sub match
 	{
 	    return ();
 	}
+
 	foreach my $i (0..$#list)
 	{
 	    my $letter = $list[$i]->{'letter'};
 	    #print "Current Letter is: $letter\n";
 	    #print "Current Bonus is: $bonus\n";
-	    
-	    $letter =~ s/\*/\\w/;
-	    if ($letterElement =~ s/$letter//)
+	    	    
+	    if ($letter =~ m/\*/)
+	    {
+		$list[$i]->{'letter'} = "${letterElement}*";
+		push @elements, $list[$i];
+		splice(@list, $i, 1);
+		$earlyStop = 0;
+		last;	   
+	    }
+	    elsif ($letterElement =~ m/$letter/)
 	    {
 		push @elements, $list[$i];
 		splice(@list, $i, 1);
@@ -137,6 +164,7 @@ sub match
 	    }
 	    #print "Current Buffer is: $buffer\n";  
 	}
+
 	if ($earlyStop)
 	{
 	    return ();
@@ -147,26 +175,35 @@ sub match
 ############################################################################
 sub render
 {
-    my ($letter, $bonus) = @_;
+    my (@elements) = @_;
+    my @letters = ();
+    my %bonusTable = &buildRenderTable;
     
-    my %bounusTable = &buildRenderTable;
-    if ($bonus)
+    #print "$bonusTable{'!'}\n";
+    foreach my $ele (@elements)
     {
-	my $color = $bounusTable{$letter};
-	$letter =~ s/$letter/\033[;$color m$letter\033[0m/;
+	my $letter = $ele->{'letter'};
+	if ($ele->{'bonus'})
+	{
+	    my $color = $bonusTable{$ele->{'bonus'}};
+	    #print "Color is: $color\n";
+	    $letter =~ s/$letter/\033[;${color}m${letter}\033[0m/;
+	}
+	#print "Letter is: $letter\n";
+	push @letters, $letter;
     }
-    $letter;
-    
+    my $result = join("", @letters);
+    $result;
 }
 ############################################################################
 sub buildRenderTable
 {
-    my @table = {
+    my %table = (
 	'!' => '33', # Topaz tiles, Brown
 	'@' => '31', # Ruby Tiles, Red
 	'#' => '32', # Enerald Tiles, Green
 	'$' => '34', # Sapphine Lucky Word, Blue
 	'*' => '37', # Double Score, Light Gray
-    };
+	);
 }
 ############################################################################
