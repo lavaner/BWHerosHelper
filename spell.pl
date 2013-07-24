@@ -33,7 +33,6 @@ sub score
     my %bonusTable;
     foreach my $element (@elements)
     {
-#	print "Current element is: $element\n";
 	my $currentLetter = $element->{'letter'};
 	my $elementScore;
 	if ($currentLetter =~ m/(\*)/)
@@ -44,7 +43,6 @@ sub score
 	{
 	    $elementScore = $scoreTable{$element->{'letter'}};
 	}
-#	print "$score\n";
 	    
 	if ($element->{'bonus'})
 	{
@@ -52,15 +50,21 @@ sub score
 	    $elementScore *= 2;
 	}
 	
-	$totalScore += $elementScore;
-#	print "$totalScore\n";
+	$letterScore += $elementScore;
     }
 
+    # if has double score bonus
     if ($elements[$#elements]->{'letter'} =~ m/(\*)/)
     {
-	$totalScore *= 2;
+	$letterScore *= 2;
     }
-    $totalScore;
+
+    if ($bonusTable{"#"})
+    {
+	$bonusScore = 5 * $bonusTable{"#"} + $#elements + 1;
+    }
+    
+    $totalScore = $letterScore + $bonusScore;
 }
 ###########################################################################
 sub buildElementList
