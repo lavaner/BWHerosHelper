@@ -33,9 +33,8 @@ sub score
     my %bonusTable;
     foreach my $element (@elements)
     {
-	my $currentLetter = $element->{'letter'};
 	my $elementScore;
-	if ($currentLetter =~ m/(\*)/)
+	if ($element->{'bonus'} =~ m/(\*)/)
 	{
 	    $elementScore = 0;
 	}
@@ -54,7 +53,7 @@ sub score
     }
 
     # if has double score bonus
-    if ($elements[$#elements]->{'letter'} =~ m/(\*)/)
+    if ($bonusTable{"*"})
     {
 	$letterScore *= 2;
     }
@@ -153,8 +152,11 @@ sub match
 	    	    
 	    if ($letter =~ m/\*/)
 	    {
-		$list[$i]->{'letter'} = "${letterElement}*";
-		push @elements, $list[$i];
+		my $newElement = {
+		    'letter' => $letterElement,
+		    'bonus' => "*",
+		};
+		push @elements, $newElement;
 		splice(@list, $i, 1);
 		$earlyStop = 0;
 		last;	   
@@ -207,7 +209,7 @@ sub buildRenderTable
 	'@' => '31', # Ruby Tiles, Red
 	'#' => '32', # Enerald Tiles, Green
 	'$' => '34', # Sapphine Lucky Word, Blue
-	'*' => '37', # Double Score, Light Gray
+	'*' => '36', # Double Score, Light Gray
 	);
 }
 ############################################################################
